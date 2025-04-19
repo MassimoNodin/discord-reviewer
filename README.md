@@ -58,7 +58,7 @@ python reviewer.py
 `/review title: Create a Discord Review Bot roles: @testbot link: https://github.com/MassimoNodin/discord-reviewer`
 
 **Result in `active-reviews` channel:**  
-![Active Review Example](image_examples/active_review.png)
+<img src="image_examples/active_review.png" alt="Active Review Example" width="350"/>
 
 ---
 
@@ -68,7 +68,7 @@ python reviewer.py
 A user clicks the **Mark as Reviewed** button on the review in the `active-reviews` channel marking it as reviewed and moving it to the `reviewed-tasks` channel.
 
 **Result in `reviewed-tasks` channel:**  
-![Reviewed Task Example](image_examples/reviewed_task.png)
+<img src="image_examples/reviewed_task.png" alt="Reviewed Task Example" width="350"/>
 
 ---
 
@@ -78,7 +78,7 @@ A user clicks the **Mark as Reviewed** button on the review in the `active-revie
 The author receives a DM notification when their task is marked as reviewed.
 
 **DM Example:**  
-![DM Notification Example](image_examples/dm_notification.png)
+<img src="image_examples/dm_example.png" alt="DM Notification Example" width="350"/>
 
 ---
 
