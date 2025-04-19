@@ -53,5 +53,7 @@ async def setup_cogs():
 if __name__ == '__main__':
     ensure_data_file()
     asyncio.run(setup_cogs())
-    token = open('token.txt').readline().strip()
+    # Read token from secrets.txt (first line)
+    with open('secrets.txt', 'r') as f:
+        token = f.readline().strip()
     bot.run(token)
