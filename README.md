@@ -23,7 +23,7 @@ Reviewer Bot helps your community organize, track, and complete reviews with eas
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/reviewer-bot.git
+git clone https://github.com/MassimoNodin/reviewer-bot.git
 cd reviewer-bot
 ```
 
