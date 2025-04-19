@@ -50,6 +50,38 @@ python reviewer.py
 
 ---
 
+## 🖼️ Example Interactions
+
+### 1. Submitting a Review
+
+**Command:**  
+`/review title: Create a Discord Review Bot roles: @testbot link: https://github.com/MassimoNodin/discord-reviewer`
+
+**Result in `active-reviews` channel:**  
+![Active Review Example](image_examples/active_review.png)
+
+---
+
+### 2. Marking as Reviewed
+
+**Interaction:**  
+A user clicks the **Mark as Reviewed** button on the review in the `active-reviews` channel marking it as reviewed and moving it to the `reviewed-tasks` channel.
+
+**Result in `reviewed-tasks` channel:**  
+![Reviewed Task Example](image_examples/reviewed_task.png)
+
+---
+
+### 3. DM Notification
+
+**Interaction:**  
+The author receives a DM notification when their task is marked as reviewed.
+
+**DM Example:**  
+![DM Notification Example](image_examples/dm_notification.png)
+
+---
+
 ## 🛠️ Usage
 
 ### Setup
