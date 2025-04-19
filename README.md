@@ -78,7 +78,7 @@ A user clicks the **Mark as Reviewed** button on the review in the `active-revie
 The author receives a DM notification when their task is marked as reviewed.
 
 **DM Example:**  
-<img src="image_examples/dm_example.png" alt="DM Notification Example" width="350"/>
+<img src="image_examples/dm_example.png" alt="DM Notification Example" width="650"/>
 
 ---
 
