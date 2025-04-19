@@ -152,6 +152,12 @@ class ActiveReviewView(View):
                 allowed_role_ids = set(review['role_ids'])
             elif 'role_id' in review and review['role_id']:
                 allowed_role_ids = {review['role_id']}
+        else:
+            await interaction.message.delete()
+            await interaction.response.send_message(
+                ":warning: **Task not found.**", ephemeral=True, delete_after=5
+            )
+            return
         is_author = review and review['author_id'] == interaction.user.id
         has_role = any(role.id in allowed_role_ids for role in interaction.user.roles) if allowed_role_ids else False
         if not (is_author or has_role):
@@ -203,6 +209,7 @@ class ActiveReviewView(View):
         guild_data = data.get(guild_id, {})
         review = guild_data.get('reviews', {}).get(str(message_id))
         if not review:
+            await interaction.message.delete()
             await interaction.response.send_message(
                 ":warning: **Task not found.**", ephemeral=True, delete_after=5
             )
