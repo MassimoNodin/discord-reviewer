@@ -50,6 +50,20 @@ python reviewer.py
 
 ---
 
+## 📁 Required Service Files
+
+The following files are required for Reviewer Bot and the `update_and_restart.py` automation to work:
+
+- `token.txt`: Your Discord bot token (see above).
+- `reviews.json`: Stores all review data. This file is created and managed by the bot.
+- `secrets.txt`: (If used) Store any additional secrets or API keys needed by your custom integrations.
+- `update_and_restart.py`: Script used by systemd to update and restart the bot automatically.
+- `update_and_restart_reviewer.service` and `update_and_restart_reviewer.timer`: Systemd unit files for automation (typically placed in `/etc/systemd/system/`).
+
+All sensitive files are excluded from version control by `.gitignore`.
+
+---
+
 ## 🖼️ Example Interactions
 
 ### 1. Submitting a Review
