@@ -56,7 +56,7 @@ def verify_signature(payload_body, secret_token, signature_header):
         return False
     return True
 
-@app.route('/webhook', methods=['POST'])
+@app.route('/', methods=['POST'])
 def webhook():
     """Handles incoming GitHub webhook requests."""
     logging.info("Webhook received.")
