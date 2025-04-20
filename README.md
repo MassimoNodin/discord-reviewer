@@ -48,19 +48,93 @@ pip install -r requirements.txt
 python reviewer.py
 ```
 
+The bot can also be automatically updated and restarted upon pushes to its GitHub repository using a webhook listener.
+
+---
+
+## ⚙️ Automatic Updates via GitHub Webhook (Optional Setup)
+
+Instead of manual updates, you can configure the bot to automatically pull changes and restart when you push to its GitHub repository. This uses a Flask webhook listener managed by systemd and proxied by Nginx.
+
+**Requirements:**
+*   A server with a public IP address or domain name.
+*   Nginx installed (`sudo apt update && sudo apt install nginx`).
+*   Gunicorn installed (`pip install gunicorn`).
+*   Git installed.
+*   SSL certificate (Let's Encrypt recommended).
+*   A systemd service file for the main bot (e.g., `reviewer.service`, assumed name).
+*   **Passwordless sudo:** The user running the webhook listener service (`massimo-nodin` in the example) needs passwordless sudo permission *specifically* to restart the bot's systemd service.
+
+**Steps:**
+
+1.  **Configure Passwordless Sudo (CRITICAL):**
+    *   Edit the sudoers file safely: `sudo visudo`
+    *   Add the following line, replacing `massimo-nodin` with the correct username and `reviewer.service` with the actual service name:
+        ```
+        massimo-nodin ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart reviewer.service
+        ```
+    *   **Warning:** Granting sudo permissions incorrectly can be a security risk. Ensure the path and command are exact.
+
+2.  **Create `secrets.txt`:**
+    *   In the project root, create a file named `secrets.txt`.
+    *   Add a line with a strong, randomly generated secret for webhook verification:
+        ```
+        WEBHOOK_SECRET=your_very_strong_random_secret_here
+        ```
+    *   `.gitignore` already excludes this file.
+
+3.  **Webhook Listener Script:**
+    *   The `webhook_listener.py` script (included) listens for webhook POST requests from GitHub.
+    *   It verifies the request signature using the `WEBHOOK_SECRET` from `secrets.txt`.
+    *   On a valid push to the `main` branch, it executes `git pull` in the bot's directory and then runs `sudo systemctl restart reviewer.service` (using the passwordless sudo permission configured above) to restart the main bot service.
+
+4.  **Systemd Service for Webhook Listener:**
+    *   Copy the provided `update_and_restart_reviewer.service` file to `/etc/systemd/system/`. **Note:** Despite the filename, this service now runs the *webhook listener*, not the old update script. You might consider renaming the `.service` file for clarity (e.g., `reviewer-webhook.service`) and updating commands accordingly.
+    *   Enable and start the service:
+        ```bash
+        # If using the original filename:
+        sudo cp update_and_restart_reviewer.service /etc/systemd/system/
+        sudo systemctl enable update_and_restart_reviewer.service
+        sudo systemctl start update_and_restart_reviewer.service
+        sudo systemctl status update_and_restart_reviewer.service # Check status
+        ```
+    *   This service runs the `webhook_listener.py` using Gunicorn.
+
+5.  **Nginx Configuration:**
+    *   Configure Nginx as a reverse proxy to securely forward requests from the internet to the local webhook listener (running on port 5000 by default).
+    *   Create an Nginx site configuration file (e.g., `/etc/nginx/sites-available/reviewer-webhook`) similar to the example provided in the repository or documentation. **Crucially, configure SSL.**
+    *   Enable the site and reload Nginx:
+        ```bash
+        sudo ln -s /etc/nginx/sites-available/reviewer-webhook /etc/nginx/sites-enabled/
+        sudo nginx -t # Test configuration
+        sudo systemctl reload nginx
+        ```
+
+6.  **GitHub Webhook Setup:**
+    *   Go to your bot's repository on GitHub -> Settings -> Webhooks -> Add webhook.
+    *   **Payload URL:** `https://your_domain_or_ip/webhook` (Use your public URL configured in Nginx).
+    *   **Content type:** `application/json`.
+    *   **Secret:** Paste the *same* secret you put in `secrets.txt`.
+    *   **Which events?** Select "Just the push event".
+    *   Ensure "Active" is checked.
+    *   Add the webhook. GitHub will send a 'ping' event to test the connection. Check the listener's logs (`journalctl -u update_and_restart_reviewer.service -f`) or Nginx logs for confirmation.
+
+Now, whenever you push changes to the `main` branch of your repository, GitHub will notify your server, triggering an automatic `git pull` and restart of the Reviewer Bot via its systemd service.
+
 ---
 
 ## 📁 Required Service Files
 
-The following files are required for Reviewer Bot and the `update_and_restart.py` automation to work:
+The following files are required for Reviewer Bot and the optional webhook automation to work:
 
 - `token.txt`: Your Discord bot token (see above).
 - `reviews.json`: Stores all review data. This file is created and managed by the bot.
-- `secrets.txt`: (If used) Store any additional secrets or API keys needed by your custom integrations.
-- `update_and_restart.py`: Script used by systemd to update and restart the bot automatically.
-- `update_and_restart_reviewer.service` and `update_and_restart_reviewer.timer`: Systemd unit files for automation (typically placed in `/etc/systemd/system/`).
+- `secrets.txt`: Contains the `WEBHOOK_SECRET` for GitHub webhook verification.
+- `webhook_listener.py`: Flask application that listens for GitHub webhooks, runs `git pull`, and triggers the bot restart.
+- `update_and_restart_reviewer.service`: Systemd unit file to run the `webhook_listener.py` via Gunicorn (typically placed in `/etc/systemd/system/`). Consider renaming for clarity (e.g., `reviewer-webhook.service`).
+- `reviewer.service`: (Not provided, but required) A separate systemd service to run the main `reviewer.py` bot itself. This is the service restarted by the webhook listener.
 
-All sensitive files are excluded from version control by `.gitignore`.
+All sensitive files (`token.txt`, `secrets.txt`, `reviews.json`) are excluded from version control by `.gitignore`.
 
 ---
 
