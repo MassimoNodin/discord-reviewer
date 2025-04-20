@@ -4,8 +4,21 @@ from discord import app_commands
 from .review_utils import is_valid_url, load_data, save_data
 from .review_views import RoleSelectView, CreateReviewButtonView, ActiveReviewView
 from .review_modals import DeleteConfirmationModal, CreateReviewModal
-from datetime import datetime, UTC
+from datetime import datetime, UTC, timedelta
 import asyncio
+import json
+import os
+
+def format_timedelta(td):
+    days = td.days
+    hours, rem = divmod(td.seconds, 3600)
+    minutes, seconds = divmod(rem, 60)
+    parts = []
+    if days: parts.append(f"{days}d")
+    if hours: parts.append(f"{hours}h")
+    if minutes: parts.append(f"{minutes}m")
+    if seconds or not parts: parts.append(f"{seconds}s")
+    return " ".join(parts)
 
 class ReviewCommands(commands.Cog):
     def __init__(self, bot):
@@ -207,6 +220,46 @@ class ReviewCommands(commands.Cog):
             return
         modal = DeleteConfirmationModal()
         await interaction.response.send_modal(modal)
+
+    @commands.command(name="status")
+    @commands.is_owner()
+    async def status(self, ctx):
+        """Show bot uptime and GitHub webhook info (owner only)."""
+        now = datetime.now(UTC)
+        uptime = now - (self.bot.start_time or now)
+        embed = discord.Embed(
+            title="Bot Status",
+            color=discord.Color.blurple()
+        )
+        embed.add_field(name="Uptime", value=format_timedelta(uptime), inline=False)
+
+        # Read last GitHub update info from file
+        update_file = os.path.join(os.path.dirname(__file__), "..", "last_github_update.json")
+        try:
+            with open(update_file, "r") as f:
+                update_info = json.load(f)
+            last_pull = update_info.get("pulled_at", "Unknown")
+            commit_msg = update_info.get("commit_message", "Unknown")
+            commit_hash = update_info.get("commit_hash", "Unknown")
+            commit_author = update_info.get("commit_author", "Unknown")
+        except Exception:
+            last_pull = "Unknown"
+            commit_msg = "Unknown"
+            commit_hash = "Unknown"
+            commit_author = "Unknown"
+
+        embed.add_field(
+            name="Last Git Pull",
+            value=f"{last_pull}",
+            inline=False
+        )
+        embed.add_field(
+            name="Latest Commit",
+            value=f"`{commit_hash}` by **{commit_author}**\n{commit_msg}",
+            inline=False
+        )
+        embed.set_footer(text="Only visible to the bot owner.")
+        await ctx.send(embed=embed)
 
 async def create_review_from_modal(interaction, title, roles, link):
     guild_id = str(interaction.guild_id)

@@ -3,6 +3,7 @@ from discord.ext import commands
 import os
 import json
 import asyncio
+from datetime import datetime, UTC
 
 DATA_FILE = 'reviews.json'
 
@@ -11,15 +12,31 @@ def ensure_data_file():
         with open(DATA_FILE, 'w') as f:
             json.dump({}, f, indent=4)
 
+# --- Read secrets.txt for owner id ---
+OWNER_ID = None
+BOT_TOKEN = None
+with open('secrets.txt', 'r') as f:
+    lines = f.readlines()
+    if len(lines) >= 1:
+        BOT_TOKEN = lines[0].strip()
+    if len(lines) >= 2:
+        try:
+            OWNER_ID = int(lines[1].strip())
+        except Exception:
+            OWNER_ID = None
+# --- End secrets.txt reading ---
+
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 intents.reactions = True
 
-bot = commands.Bot(command_prefix='/', intents=intents, help_command=None)
+bot = commands.Bot(command_prefix='/', intents=intents, help_command=None, owner_id=OWNER_ID)
+bot.start_time = None
 
 @bot.event
 async def on_ready():
+    bot.start_time = datetime.now(UTC)
     print(f'Logged in as {bot.user}')
     await bot.tree.sync()
     print("Slash commands synced.")
@@ -53,7 +70,4 @@ async def setup_cogs():
 if __name__ == '__main__':
     ensure_data_file()
     asyncio.run(setup_cogs())
-    # Read token from secrets.txt (first line)
-    with open('secrets.txt', 'r') as f:
-        token = f.readline().strip()
-    bot.run(token)
+    bot.run(BOT_TOKEN)

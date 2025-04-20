@@ -4,6 +4,8 @@ import subprocess
 import os
 import logging
 from flask import Flask, request, abort
+from datetime import datetime, timezone
+import json
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -85,12 +87,32 @@ def webhook():
                 pull_result = subprocess.run(git_pull_cmd, cwd=APP_DIR, capture_output=True, text=True, check=True)
                 logging.info(f"Git pull successful:\n{pull_result.stdout}")
 
+                # --- Write last GitHub update info ---
+                try:
+                    commit_hash = payload.get('after', '')[:7]
+                    head_commit = payload.get('head_commit', {})
+                    commit_msg = head_commit.get('message', 'Unknown')
+                    commit_author = head_commit.get('author', {}).get('name', 'Unknown')
+                    pulled_at = datetime.now(timezone.utc).isoformat()
+                    update_info = {
+                        "pulled_at": pulled_at,
+                        "commit_hash": commit_hash,
+                        "commit_message": commit_msg,
+                        "commit_author": commit_author
+                    }
+                    update_file = os.path.join(APP_DIR, "last_github_update.json")
+                    with open(update_file, "w") as f:
+                        json.dump(update_info, f, indent=2)
+                    logging.info("Wrote last_github_update.json")
+                except Exception as e:
+                    logging.error(f"Failed to write last_github_update.json: {e}")
+                # --- End write ---
+
                 # 2. Restart the bot service using systemctl
                 # IMPORTANT: Requires passwordless sudo for this specific command!
                 logging.info(f"Restarting service: {BOT_SERVICE_NAME}...")
                 restart_cmd = ['/usr/bin/sudo', '/usr/bin/systemctl', 'restart', BOT_SERVICE_NAME]
                 restart_result = subprocess.run(restart_cmd, capture_output=True, text=True, check=True)
-                logging.info(f"Service restart command executed. Output:\n{restart_result.stdout or '<no output>'}")
                 if restart_result.stderr:
                      logging.warning(f"Service restart command stderr:\n{restart_result.stderr}")
 
