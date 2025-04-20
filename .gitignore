@@ -1,3 +1,4 @@
 secrets.txt
 __pycache__/
 reviews.json
+last_github_update.json
